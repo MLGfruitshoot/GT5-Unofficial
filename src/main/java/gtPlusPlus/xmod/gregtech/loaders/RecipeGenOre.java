@@ -2,6 +2,7 @@ package gtPlusPlus.xmod.gregtech.loaders;
 
 import static gregtech.api.enums.GTValues.RA;
 import static gregtech.api.recipe.RecipeMaps.centrifugeRecipes;
+import static gregtech.api.recipe.RecipeMaps.chemicalBathRecipes;
 import static gregtech.api.recipe.RecipeMaps.electrolyzerRecipes;
 import static gregtech.api.recipe.RecipeMaps.hammerRecipes;
 import static gregtech.api.recipe.RecipeMaps.maceratorRecipes;
@@ -25,8 +26,10 @@ import org.apache.commons.lang3.tuple.Pair;
 import gregtech.api.enums.GTValues;
 import gregtech.api.enums.ItemList;
 import gregtech.api.enums.Materials;
+import gregtech.api.enums.OrePrefixes;
 import gregtech.api.enums.TierEU;
 import gregtech.api.util.GTModHandler;
+import gregtech.api.util.GTOreDictUnificator;
 import gtPlusPlus.core.material.Material;
 import gtPlusPlus.core.material.MaterialGenerator;
 import gtPlusPlus.core.material.MaterialStack;
@@ -83,7 +86,7 @@ public class RecipeGenOre extends RecipeGenBase {
 
         final ArrayList<Material> amJ = new ArrayList<>();
         for (Material g : aMatComp) {
-            if (g.hasSolidForm()) {
+            if (g.hasSolidForm() || g.tryFindGregtechMaterialEquivalent() != null) {
                 amJ.add(g);
                 if (amJ.size() >= 2) break;
             }
@@ -134,10 +137,10 @@ public class RecipeGenOre extends RecipeGenBase {
 
         // Need two valid outputs
         if (bonusA == null || !bonusA.hasSolidForm()) {
-            bonusA = mStone;
+            bonusA = material;
         }
         if (bonusB == null || !bonusB.hasSolidForm()) {
-            bonusB = mStone;
+            bonusB = material;
         }
 
         ItemStack matDust = getDust(material);
@@ -150,7 +153,8 @@ public class RecipeGenOre extends RecipeGenBase {
         // Macerate ore to Crushed
         GTValues.RA.stdBuilder()
             .itemInputs(material.getOre(1))
-            .itemOutputs(material.getCrushed(2))
+            .itemOutputs(material.getCrushed(2), matDust)
+            .outputChances(100_00, 10_00)
             .duration(20 * SECONDS)
             .eut(tVoltageMultiplier / 2)
             .addTo(maceratorRecipes);
@@ -158,7 +162,8 @@ public class RecipeGenOre extends RecipeGenBase {
         // Macerate raw ore to Crushed
         GTValues.RA.stdBuilder()
             .itemInputs(material.getRawOre(1))
-            .itemOutputs(material.getCrushed(2))
+            .itemOutputs(material.getCrushed(2), matDust)
+            .outputChances(100_00, 5_00)
             .duration(20 * SECONDS)
             .eut(tVoltageMultiplier / 2)
             .addTo(maceratorRecipes);
@@ -208,6 +213,19 @@ public class RecipeGenOre extends RecipeGenBase {
             .duration(15 * SECONDS)
             .eut(TierEU.RECIPE_LV / 2)
             .addTo(oreWasherRecipes);
+
+        // Fluorite Hydrogen Chemical Bath
+        if (material.getLocalizedName()
+            .equals("Fluorite (F)")) {
+            GTValues.RA.stdBuilder()
+                .itemInputs(material.getCrushed(1))
+                .itemOutputs(material.getCrushedPurified(4), material.getDustImpure(2), material.getDustPurified(1))
+                .outputChances(100_00, 50_00, 10_00)
+                .fluidInputs(Materials.Hydrogen.getGas(1_000))
+                .duration(15 * SECONDS)
+                .eut(TierEU.RECIPE_HV / 2)
+                .addTo(chemicalBathRecipes);
+        }
 
         // Thermal Centrifuge
 
@@ -475,6 +493,12 @@ public class RecipeGenOre extends RecipeGenBase {
 
     public static ItemStack getDust(Material m) {
         ItemStack x = m.getDust(1);
+        if (x == null) {
+            Materials gt = m.tryFindGregtechMaterialEquivalent();
+            if (gt != null) {
+                x = GTOreDictUnificator.get(OrePrefixes.dust, gt, 1);
+            }
+        }
         if (x == null) {
             x = mStone.getDust(1);
         }
