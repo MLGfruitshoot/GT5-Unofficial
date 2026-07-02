@@ -153,8 +153,8 @@ public class RecipeGenOre extends RecipeGenBase {
         // Macerate ore to Crushed
         GTValues.RA.stdBuilder()
             .itemInputs(material.getOre(1))
-            .itemOutputs(material.getCrushed(2), matDust)
-            .outputChances(100_00, 10_00)
+            .itemOutputs(material.getCrushed(2), matDustA, dustStone)
+            .outputChances(100_00, 10_00, 50_00)
             .duration(20 * SECONDS)
             .eut(tVoltageMultiplier / 2)
             .addTo(maceratorRecipes);
@@ -162,8 +162,8 @@ public class RecipeGenOre extends RecipeGenBase {
         // Macerate raw ore to Crushed
         GTValues.RA.stdBuilder()
             .itemInputs(material.getRawOre(1))
-            .itemOutputs(material.getCrushed(2), matDust)
-            .outputChances(100_00, 5_00)
+            .itemOutputs(material.getCrushed(2), matDustA, dustStone)
+            .outputChances(100_00, 5_00, 50_00)
             .duration(20 * SECONDS)
             .eut(tVoltageMultiplier / 2)
             .addTo(maceratorRecipes);
